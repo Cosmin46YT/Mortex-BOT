@@ -1,48 +1,77 @@
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const P = require('pino');
 const express = require('express');
 const app = express();
-let qrCode = null;
-let status = "Porneste botul...";
 
-async function startBot(){
-  const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
-  const pino = require('pino');
-  const { state, saveCreds } = await useMultiFileAuthState('./auth');
+const PHONE_NUMBER = "40770811929"; // Numarul tau
+let pairingCode = null;
+let isOnline = false;
+let sock;
 
-  const sock = makeWASocket({
-    auth: state,
-    logger: pino({level:'silent'}),
-    browser: ["Mortex-BOT","Chrome","1.0"]
-  });
+async function startBot() {
+    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
 
-  sock.ev.on('creds.update', saveCreds);
+    sock = makeWASocket({
+        auth: state,
+        logger: P({ level: 'silent' }),
+        printQRInTerminal: false,
+        browser: ["Mortex Bot", "Chrome", "1.0.0"]
+    });
 
-  sock.ev.on('connection.update', (u)=>{
-    if(u.qr){ qrCode = u.qr; status = "Scaneaza QR-ul mai jos!"; }
-    if(u.connection === 'open'){ status = "✅ BOT ONLINE!"; qrCode = null; console.log("MORTEX ONLINE");}
-    if(u.connection === 'close'){
-       const reason = u.lastDisconnect?.error?.output?.statusCode;
-       if(reason!== DisconnectReason.loggedOut) setTimeout(startBot, 3000);
+    // Daca nu e conectat, cere COD
+    if (!state.creds.registered) {
+        setTimeout(async () => {
+            try {
+                pairingCode = await sock.requestPairingCode(PHONE_NUMBER);
+                console.log("CODUL TAU: " + pairingCode);
+            } catch (e) {
+                console.log("Eroare cod: ", e);
+            }
+        }, 3000);
     }
-  });
 
-  sock.ev.on('messages.upsert', async ({messages})=>{
-    const m = messages[0];
-    if(!m.message) return;
-    const text = m.message.conversation || m.message.extendedTextMessage?.text || "";
-    if(text.trim() === ".ping"){
-      await sock.sendMessage(m.key.remoteJid, {text:"⚡ Mortex e ONLINE vere!"}, {quoted:m});
-    }
-  });
+    sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect } = update;
+        if (connection === 'open') {
+            isOnline = true;
+            pairingCode = null;
+            console.log('✅ MORTEX ONLINE!');
+        }
+        if (connection === 'close') {
+            isOnline = false;
+            const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode!== DisconnectReason.loggedOut;
+            if (shouldReconnect) startBot();
+        }
+    });
+
+    // Comenzi bot
+    sock.ev.on('messages.upsert', async m => {
+        const msg = m.messages[0];
+        if (!msg.message || msg.key.fromMe) return;
+        const text = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+        const from = msg.key.remoteJid;
+
+        if (text.toLowerCase() === ".ping") {
+            await sock.sendMessage(from, { text: "🏓 Pong! MORTEX ONLINE vere!" });
+        }
+        if (text.toLowerCase() === ".mortex") {
+            await sock.sendMessage(from, { text: "👑 Eu sunt MORTEX, botul tau personal!" });
+        }
+    });
 }
 
-app.get('/', async (req,res)=>{
-  if(qrCode){
-    const QR = require('qrcode');
-    const img = await QR.toDataURL(qrCode);
-    return res.send(`<body style="background:#000;color:#fff;text-align:center;font-family:Arial"><h1>👑 MORTEX BOT</h1><h2>${status}</h2><img src="${img}" style="border:10px solid white" width="300"><p>Deschide WhatsApp > Setari > Dispozitive conectate > Conecteaza dispozitiv</p></body>`);
-  }
-  res.send(`<body style="background:#000;color:#fff;text-align:center;padding:100px 20px;font-family:Arial"><h1>${status}</h1><p>Asteapta QR-ul...</p></body>`);
+startBot();
+
+app.get('/', (req, res) => {
+    if (isOnline) {
+        res.send("<h1 style='background:black;color:#00ff00;padding:50px;text-align:center;font-family:Arial'>✅ MORTEX ONLINE!<br><br>Scrie.ping pe WhatsApp</h1>");
+    } else if (pairingCode) {
+        res.send(`<div style='background:black;color:white;padding:50px;text-align:center;font-family:Arial'><h1>👑 MORTEX BOT</h1><h2>CODUL TAU ESTE:</h2><h1 style='font-size:50px;letter-spacing:10px;color:#00ff00;background:#111;padding:20px;border:2px dashed #00ff00'>${pairingCode}</h1><p>Intra in WhatsApp > Dispozitive conectate > Conecteaza cu numar de telefon > baga codul</p><p style='color:yellow'>Codul se schimba la refresh, baga-l repede!</p></div>`);
+    } else {
+        res.send("<h1 style='background:black;color:white;padding:50px;text-align:center'>⏳ Se genereaza codul... da refresh in 5 secunde</h1>");
+    }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, ()=>{ startBot(); });
+app.listen(3000, () => console.log("Server pornit pe 3000"));
