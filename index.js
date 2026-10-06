@@ -4,7 +4,7 @@ const express = require('express');
 const fs = require('fs');
 const app = express();
 
-const PHONE_NUMBER = process.env.PHONE_NUMBER || "+40770811929";
+const PHONE_NUMBER = process.env.PHONE_NUMBER || "40770811929";
 let pairingCode = null;
 let isOnline = false;
 let sock;
