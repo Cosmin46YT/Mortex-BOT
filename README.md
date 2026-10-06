@@ -15,7 +15,7 @@
 ## Mortex-BOT Deployment Methods
 
 1. Fork Repo First, [**CLICK HERE**](https://github.com/Cosmin46YT/Mortex-BOT/fork) (A MUST) and Star ⭐ Repository
-2. Get SESSION ID BY [**PAIRING CODE**](https://MORTEX-UL-TAU.koyeb.app) <- AICI PUI LINK-UL TAU KOYEB
+2. Get SESSION ID BY [**PAIRING CODE**](https://dear-elysee-alrdeiefeanonimsgry-9cfcbc83.koyeb.app/) <- AICI PUI LINK-UL TAU KOYEB
 3. Deploy on [**HEROKU**](https://heroku.com)
 4. Deploy on [**RENDER**](https://render.com)
 5. Deploy on [**KOYEB**](https://koyeb.com)
