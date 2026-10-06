@@ -3,7 +3,7 @@ const P = require('pino');
 const express = require('express');
 const app = express();
 
-const PHONE_NUMBER = "40770811929"; // Numarul tau
+const PHONE_NUMBER = "+40770811929"; // Numarul tau
 let pairingCode = null;
 let isOnline = false;
 let sock;
