@@ -19,7 +19,7 @@ async function start() {
 
   sock.ev.on('messages.upsert', async ({messages}) => {
     let m = messages[0];
-    if(!m.message || m.key.fromMe) return;
+   if(!m.message) return; 
     m.chat = m.key.remoteJid;
     let txt = m.message.conversation || m.message.extendedTextMessage?.text || "";
     if(!txt.startsWith(".")) return;
