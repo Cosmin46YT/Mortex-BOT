@@ -6,32 +6,47 @@ async function start() {
   const sock = makeWASocket({
     auth: state,
     logger: P({level:'silent'}),
-    printQRInTerminal: true,
+    printQRInTerminal: false,
     browser:["Ubuntu","Chrome","20.0.04"]
   });
 
   sock.ev.on('creds.update', saveCreds);
 
+  // AICI PUI NUMARUL TAU FARA + SI FARA SPATII
+  const NUMARUL_TAU = "40770811929";
+
+  if(!sock.authState.creds.registered) {
+    setTimeout(async () => {
+      try {
+        let code = await sock.requestPairingCode(NUMARUL_TAU);
+        console.log(`\n\n==============================\nCODUL TAU DE 8 CIFRE: ${code}\n==============================\n`);
+        console.log(`Du-te in WhatsApp > Setari > Dispozitive conectate > Conecteaza cu numar de telefon`);
+        console.log(`Baga codul: ${code}\n\n`);
+      } catch(e){ console.log('Eroare pairing: '+e.message) }
+    }, 3000);
+  }
+
   sock.ev.on('messages.upsert', async ({messages}) => {
     let m = messages[0];
     if(!m.message) return;
     let txt = m.message.conversation || m.message.extendedTextMessage?.text || "";
-    console.log('Mesaj: '+txt);
+    console.log('Mesaj primit: '+txt);
     if(!txt.startsWith(".")) return;
-    let cmd = txt.slice(1).toLowerCase().trim();
+    let cmd = txt.slice(1).toLowerCase().split(" ")[0];
 
     if(cmd == 'menu' || cmd == 'meniu' || cmd == 'meni') {
-      await sock.sendMessage(m.key.remoteJid, { text: `👑 *MORTEX ULTRA BOT* 👑\n\n✅ Bot Online!\n\nComenzi:\n.menu\n.ping\n.owner\nCreator: Cosmin` });
-      console.log('MENIU TRIMIS!');
+      await sock.sendMessage(m.key.remoteJid, {
+        text: `╭─〔 👑 *MORTEX ULTRA* 〕─\n│ Prefix:.\n│ Online: ✅\n╰───────────────\n\nComenzi:\n.menu - Meniu\n.ping - Verifica\n\n© Cosmin`
+      });
+      console.log('✅ MENIU TRIMIS');
     }
     if(cmd == 'ping') {
-      await sock.sendMessage(m.key.remoteJid, { text: 'Pong! 🏓 Botul e viu!' });
+      await sock.sendMessage(m.key.remoteJid, { text: 'Pong! 🏓 Bot online Bro!' });
     }
   });
 
   sock.ev.on('connection.update', u => {
-    if(u.qr) console.log('SCANEAZA QR-UL DIN LOGS!');
-    if(u.connection=='open') console.log('✅ BOT ONLINE - SCRIE.menu ACUM!');
+    if(u.connection=='open') console.log('✅ BOT ONLINE! Scrie.menu acum!');
     if(u.connection=='close') start();
   });
 }
