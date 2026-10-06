@@ -1,12 +1,26 @@
-const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, delay } = require('@whiskeysockets/baileys');
 const P = require('pino');
 const express = require('express');
+const fs = require('fs');
 const app = express();
 
 const PHONE_NUMBER = process.env.PHONE_NUMBER || "+40770811929";
 let pairingCode = null;
 let isOnline = false;
 let sock;
+
+// === ADAUGAT: Citeste SESSION_ID din Koyeb daca exista ===
+if (process.env.SESSION_ID) {
+    try {
+        if (!fs.existsSync('./auth')) fs.mkdirSync('./auth');
+        let session = process.env.SESSION_ID.replace('Mortex~', '').replace('MORTEX~', '');
+        let creds = Buffer.from(session, 'base64').toString('utf-8');
+        fs.writeFileSync('./auth/creds.json', creds);
+        console.log('✅ SESSION_ID incarcat!');
+    } catch (e) {
+        console.log('❌ SESSION_ID invalid: ' + e.message);
+    }
+}
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('./auth');
@@ -18,7 +32,6 @@ async function startBot() {
         browser: ["Mortex Bot", "Chrome", "1.0.0"]
     });
 
-    // Daca nu e conectat, cere COD
     if (!state.creds.registered) {
         setTimeout(async () => {
             try {
@@ -34,7 +47,7 @@ async function startBot() {
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('connection.update', async (up) => {
-        const { connection, lastDisconnect } = up;
+        const { connection } = up;
         if (connection === 'open') {
             isOnline = true;
             console.log('Mortex BOT Conectat!');
@@ -49,7 +62,6 @@ async function startBot() {
 
 startBot();
 
-// PAGINA WEB CA IN POZA TA - QR CODE / PAIR CODE
 app.get('/', (req, res) => {
     res.send(`
     <html>
@@ -63,10 +75,25 @@ app.get('/', (req, res) => {
     <button class="qr" onclick="location.reload()">QR CODE</button>
     <button class="pair" onclick="location.reload()">PAIR CODE</button>
     <div id="code">${pairingCode ? `CODUL: ${pairingCode}` : isOnline ? 'BOT ONLINE ✅' : 'Se genereaza codul... refresh in 3 sec'}</div>
+    <a href="/session" style="margin-top:20px;color:cyan">GET SESSION_ID</a>
     <p style="margin-top:30px;color:gray">Mortex-BOT by Cosmin46YT</p>
     <script>setTimeout(()=>{if(!document.getElementById('code').innerText.includes('CODUL')) location.reload()},3000)</script>
     </body></html>
     `);
+});
+
+// === ADAUGAT: Pagina care iti da SESSION_ID-ul lung ===
+app.get('/session', (req, res) => {
+    try {
+        if (fs.existsSync('./auth/creds.json')) {
+            let creds = fs.readFileSync('./auth/creds.json');
+            let base64 = Buffer.from(creds).toString('base64');
+            let sessionID = `Mortex~${base64}`;
+            res.send(`<body style="background:black;color:white;padding:20px;word-break:break-all"><h3>SESSION_ID:</h3><textarea style="width:95%;height:300px">${sessionID}</textarea><p>Copiaza si pune in Koyeb la SESSION_ID</p></body>`);
+        } else {
+            res.send('Nu esti conectat inca! Conecteaza-te prima data!');
+        }
+    } catch (e) { res.send('Eroare: ' + e) }
 });
 
 app.listen(8000, () => console.log('Site pairing pe port 8000'));
