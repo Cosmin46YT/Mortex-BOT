@@ -1,0 +1,13 @@
+{
+  "name": "mortex",
+  "type": "commonjs",
+  "dependencies": {
+    "@whiskeysockets/baileys": "6.7.18",
+    "express": "4.18.2",
+    "qrcode": "1.5.3",
+    "pino": "8.16.3"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
