@@ -21,7 +21,7 @@ async function pairing() {
 
     if (!sock.authState.creds.registered) {
         console.log("\n=== MORTEX-BOT PAIRING ===\n")
-        const phoneNumber = await question("Introdu numarul tau cu prefix (ex: 40712345678): ")
+        const phoneNumber = await question("Introdu numarul tau cu prefix (ex: 40770811929): ")
         const code = await sock.requestPairingCode(phoneNumber.trim())
         console.log(`\n🔑 Codul tau de pairing este: ${code}\n`)
         console.log("Du-te in WhatsApp > Setari > Dispozitive conectate > Conecteaza un dispozitiv > Conecteaza cu numar de telefon")
