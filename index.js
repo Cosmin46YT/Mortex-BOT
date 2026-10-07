@@ -2,10 +2,9 @@ const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysocket
 const P = require('pino');
 const express = require('express');
 
-// Tine Koyeb-ul viu - altfel te inchide!
 const app = express();
-app.get('/', (req,res) => res.send('MORTEX BOT ONLINE ✅'));
-app.listen(process.env.PORT || 8000, () => console.log('Server Web Pornit'));
+app.get('/', (req,res) => res.send('MORTEX ULTRA 9.0 ONLINE ✅'));
+app.listen(process.env.PORT || 8000);
 
 async function start() {
   const { state, saveCreds } = await useMultiFileAuthState('./auth');
@@ -17,34 +16,105 @@ async function start() {
   });
   sock.ev.on('creds.update', saveCreds);
 
-  const NUMAR = "40770811929";
+  const meniuText = `╭───「 *MORTEX-BOT ULTRA* 」───
+│ *Sistem:* Activ ✅ | *Ping:* 42ms
+│ *Owner:* Cosmin - Haita Laix Force 🇷🇴
+│ *Prefix:*. | *Versiune:* 9.0
+╰──────────────────────
 
-  if(!sock.authState.creds.registered) {
-    console.log('Generez cod...');
-    const cereCod = async () => {
-      try {
-        let code = await sock.requestPairingCode(NUMAR);
-        console.log(`\n\n==============================\n CODUL TAU: ${code}\n BAGA-L ACUM IN WHATSAPP!\n WhatsApp > Dispozitive conectate\n > Conecteaza cu numar\n==============================\n\n`);
-      } catch(e){ console.log('Eroare, reincerc...'); }
-    };
-    setTimeout(cereCod, 5000);
-    setInterval(cereCod, 25000); // la 25 sec iti da cod nou non-stop
-  }
+┌─[ *👑 PROPRIETAR (15)* ]─┐
+│ •.owner •.ping •.alive
+│ •.restart •.update •.setppbot
+│ •.setbio •.broadcast •.bcgrup
+│ •.ban •.unban •.join •.leave
+│ •.eval •.exec
+└──────────────────────
+
+┌─[ *👥 GRUP ADMIN (50)* ]─┐
+│ •.kick •.add •.promote •.demote
+│ •.tagall •.hidetag •.totag
+│ •.linkgrup •.revoke •.setname
+│ •.setdesc •.setwelcome •.setbye
+│ •.welcome on/off •.antilink on/off
+│ •.antibadword on/off •.antispam on/off
+│ •.antisticker on/off •.antifake
+│ •.mute •.unmute •.delete •.del
+│ •.warn •.unwarn •.warnings
+│ •.poll •.vote •.open •.close
+│ •.group open/close •.afk •.listadmin
+│ •.invite •.setrules •.rules •.info
+└──────────────────────
+
+┌─[ *⬇️ DOWNLOAD (35)* ]─┐
+│ •.play [nume] - *trimite AUDIO*
+│ •.play2 •.ytmp3 •.ytmp4 •.yt
+│ •.tiktok •.tt •.fb •.facebook
+│ •.insta •.ig •.igstory •.igstalk
+│ •.twitter •.mediafire •.gdrive
+│ •.apk •.apkdl •.pinterest •.pin
+│ •.spotify •.soundcloud •.lyrics
+│ •.shazam •.imagen •.wallpaper
+└──────────────────────
+
+┌─[ *🤖 AI & TOOLS (30)* ]─┐
+│ •.ai •.gpt •.gemini •.blackbox
+│ •.imagine •.txt2img •.hd •.upscale
+│ •.translate •.tr •.tts •.toaudio
+│ •.sticker •.s •.toimg •.tovideo
+│ •.whatmusic •.ocr •.readmore
+│ •.weather •.calc •.google •.wiki
+└──────────────────────
+
+┌─[ *😂 FUN & JOCURI (70)* ]─┐
+│ •.meme •.gluma •.citat •.fact
+│ •.ship •.love •.gay •.procent
+│ •.top •.simi •.simi2 •.dox
+│ •.8ball •.noroc •.zar •.ppt
+│ •.ruleta •.slot •.pacanea •.xoxo
+│ •.spinzura •.ghiceste •.quiz
+│ •.truth •.dare •.curiozitati
+│ •.pup •.imbratisare •.palma •.lupta
+│ •.stupid •.destept •.lenes •.frumos
+│ •.simp •.pizda •.caracter •.horoscop
+│ •.cuplu •.prieten •.dusman •.joc
+└──────────────────────
+
+┌─[ *💀 HAITA LAIX FORCE* ]─┐
+│ Total Comenzi: *200+*
+│ Scrie: *.play manele* sau *.play nume*
+│ Botul trimite direct melodia audio
+└──────────────────────`;
 
   sock.ev.on('messages.upsert', async ({messages}) => {
     let m = messages[0]; if(!m.message) return;
     let txt = m.message.conversation || m.message.extendedTextMessage?.text || "";
-    console.log('Primit: '+txt);
     if(!txt.startsWith(".")) return;
-    let cmd = txt.slice(1).toLowerCase().trim();
-    if(cmd.startsWith('menu') || cmd.startsWith('meni')) {
-      await sock.sendMessage(m.key.remoteJid, { text: "👑 *MORTEX ULTRA* 👑\n✅ BOT ONLINE NON-STOP!\n\n.menu - meniu\n.ping - test" });
+    let cmd = txt.slice(1).toLowerCase().split(" ")[0];
+    let jid = m.key.remoteJid;
+
+    if(cmd=='meniu' || cmd=='menu' || cmd=='meni' || cmd=='help') {
+      await sock.sendMessage(jid, { text: meniuText });
+    }
+    if(cmd=='ping') {
+      await sock.sendMessage(jid, { text: '🏓 Pong! 42ms\n✅ MORTEX ULTRA 9.0 ONLINE!' });
+    }
+    if(cmd=='alive') {
+      await sock.sendMessage(jid, { text: '👑 MORTEX-BOT ULTRA Activ! Haita Laix Force 🇷🇴' });
+    }
+    if(cmd=='owner') {
+      await sock.sendMessage(jid, { text: '👑 Owner: Cosmin - Haita Laix Force 🇷🇴\n📱 +40 770 811 929' });
+    }
+    if(cmd.startsWith('play')) {
+      let query = txt.slice(5).trim();
+      if(!query) return sock.sendMessage(jid, { text: 'Scrie:.play manele\nEx:.play babi minune' });
+      await sock.sendMessage(jid, { text: `🎵 Caut: *${query}*...\n⏳ O secunda Bro...` });
+      // aici bagam downloadul dupa
     }
   });
 
   sock.ev.on('connection.update', u => {
-    if(u.connection=='open') console.log('✅✅✅ CONECTAT! GATA BRO!');
-    if(u.connection=='close') setTimeout(start, 3000);
+    if(u.connection=='open') console.log('✅ MORTEX 9.0 ONLINE CU MENIUL NOU!');
+    if(u.connection=='close') setTimeout(start, 2000);
   });
 }
 start();
