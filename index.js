@@ -1,9 +1,5 @@
 const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const P = require('pino');
-const readline = require('readline');
-
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-const question = (text) => new Promise((resolve) => rl.question(text, resolve));
 
 const meniuText = `╭───「 *MORTEX-BOT ULTRA 9.0* 」───
 │ *Sistem:* Activ ✅ | *Ping:* 38ms
@@ -30,7 +26,6 @@ const meniuText = `╭───「 *MORTEX-BOT ULTRA 9.0* 」───
 
 ┌─[ *🤖 AI & TOOLS* ]─┐
 │ •.ai •.gpt •.imagine •.sticker
-│ •.translate •.tts •.toimg
 └──────────────────────
 
 ┌─[ *😂 FUN* ]─┐
@@ -52,15 +47,18 @@ async function start() {
   sock.ev.on('creds.update', saveCreds);
 
   if (!sock.authState.creds.registered) {
-    let phoneNumber = process.env.PHONE_NUMBER;
-    if (!phoneNumber) phoneNumber = await question('📱 Numar cu prefix: ');
+    // NUMARUL TAU - PUNE-L AICI DIRECT CA SA NU MAI DEA EROARE
+    let phoneNumber = process.env.PHONE_NUMBER || "40770811929";
     phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
-    setTimeout(async () => {
-      try {
-        let code = await sock.requestPairingCode(phoneNumber);
-        console.log(`\n🔑 CODUL TAU: ${code}\n`);
-      } catch(e){ console.log(e.message) }
-    }, 3000);
+    console.log(`Se genereaza codul pentru +${phoneNumber}...`);
+    await new Promise(r => setTimeout(r, 3000));
+    try {
+      let code = await sock.requestPairingCode(phoneNumber);
+      console.log(`\n🔑 CODUL TAU: ${code}\n`);
+      console.log('WhatsApp > Setari > Dispozitive conectate > Conecteaza cu numar de telefon');
+    } catch(e){
+      console.log('Eroare pairing:', e.message);
+    }
   }
 
   sock.ev.on('messages.upsert', async ({messages}) => {
