@@ -79,9 +79,7 @@ async function start() {
     let cmd = txt.slice(1).toLowerCase().split(" ")[0];
     let jid = m.key.remoteJid;
     if(['meniu','menu','meni','help'].includes(cmd)) await sock.sendMessage(jid,{text:meniuText});
-    if(cmd=='ping') await sock.sendMessage(jid,{text:'🏓 Pong! 38ms ✅ MORTEX 9.0'});
-    if(cmd=='owner') await sock.sendMessage(jid,{text:'👑 Cosmin - Haita Laix Force'});
-  });
+    
 
   sock.ev.on('connection.update', u => {
     if(u.connection=='open') console.log('✅ MORTEX 9.0 ONLINE CU PAIRING + MENIU NOU!');
