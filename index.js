@@ -1,9 +1,47 @@
 const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const P = require('pino');
-const express = require('express');
-const app = express();
-app.get('/', (req,res) => res.send('MORTEX 9.0 ONLINE'));
-app.listen(process.env.PORT || 8000);
+const readline = require('readline');
+
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+const question = (text) => new Promise((resolve) => rl.question(text, resolve));
+
+// JOS - MENIUL MARE
+const meniuText = `╭───「 *MORTEX-BOT ULTRA 9.0* 」───
+│ *Sistem:* Activ ✅ | *Ping:* 38ms
+│ *Owner:* Cosmin - Haita Laix Force 🇷🇴
+│ *Prefix:*. | *Versiune:* 9.0
+╰──────────────────────
+
+┌─[ *👑 PROPRIETAR* ]─┐
+│ •.owner •.ping •.alive •.restart
+│ •.update •.broadcast •.ban •.eval
+└──────────────────────
+
+┌─[ *👥 GRUP ADMIN (50)* ]─┐
+│ •.kick •.add •.promote •.demote
+│ •.tagall •.hidetag •.linkgrup
+│ •.setwelcome •.antilink •.mute
+│ •.warn •.group open/close
+└──────────────────────
+
+┌─[ *⬇️ DOWNLOAD (35)* ]─┐
+│ •.play •.ytmp3 •.ytmp4 •.tiktok
+│ •.fb •.insta •.mediafire •.apk
+│ •.pinterest •.spotify
+└──────────────────────
+
+┌─[ *🤖 AI & TOOLS (30)* ]─┐
+│ •.ai •.gpt •.imagine •.sticker
+│ •.translate •.tts •.toimg
+└──────────────────────
+
+┌─[ *😂 FUN (70)* ]─┐
+│ •.meme •.ship •.8ball •.slot •.pup
+└──────────────────────
+
+┌─[ *💀 HAITA LAIX FORCE* ]─┐
+│ Total: 200+ Comenzi |.play manele
+└──────────────────────`;
 
 async function start() {
   const { state, saveCreds } = await useMultiFileAuthState('./auth');
@@ -13,96 +51,41 @@ async function start() {
     printQRInTerminal: false,
     browser:["Ubuntu","Chrome","20.0.04"]
   });
+
   sock.ev.on('creds.update', saveCreds);
 
-  // SUS - COMENZI IMPORTANTE
+  // CODUL DE PAIRING - ASTA ITI TREBUIE PENTRU TELEFON!
+  if (!sock.authState.creds.registered) {
+    console.log('--- CONECTARE WHATSAPP ---');
+    let phoneNumber = process.env.PHONE_NUMBER;
+    if (!phoneNumber) {
+      phoneNumber = await question('📱 Scrie numarul tau cu prefix (ex: 40770811929): ');
+    }
+    phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
+    console.log(`Se genereaza codul pentru +${phoneNumber}...`);
+    await new Promise(r => setTimeout(r, 2000));
+    let code = await sock.requestPairingCode(phoneNumber);
+    console.log(`\n🔑 CODUL TAU DE CONECTARE: ${code}\n`);
+    console.log('1. Deschide WhatsApp pe telefon');
+    console.log('2. Setari > Dispozitive conectate > Conecteaza dispozitiv');
+    console.log('3. Alege "Conecteaza cu numar de telefon" si scrie codul de mai sus!');
+    rl.close();
+  }
+
   sock.ev.on('messages.upsert', async ({messages}) => {
     let m = messages[0]; if(!m.message) return;
-    if(m.key.fromMe && (m.message.conversation||"").includes('MORTEX-BOT')) return;
     let txt = m.message.conversation || m.message.extendedTextMessage?.text || "";
     if(!txt.startsWith(".")) return;
     let cmd = txt.slice(1).toLowerCase().split(" ")[0];
     let jid = m.key.remoteJid;
-
-    if(cmd=='meniu'||cmd=='menu'||cmd=='meni'||cmd=='help') {
-      await sock.sendMessage(jid,{text:meniuText});
-    }
-    if(cmd=='ping') {
-      await sock.sendMessage(jid,{text:'🏓 Pong! 38ms\n✅ MORTEX 9.0 ONLINE NON-STOP!'});
-    }
-    if(cmd=='alive') {
-      await sock.sendMessage(jid,{text:'👑 MORTEX ULTRA 9.0 Activ!\n🔥 Haita Laix Force 🇷🇴'});
-    }
-    if(cmd=='owner') {
-      await sock.sendMessage(jid,{text:'👑 Owner: Cosmin - Haita Laix Force 🇷🇴\n📞 +40 770 811 929'});
-    }
+    if(['meniu','menu','meni','help'].includes(cmd)) await sock.sendMessage(jid,{text:meniuText});
+    if(cmd=='ping') await sock.sendMessage(jid,{text:'🏓 Pong! 38ms ✅ MORTEX 9.0'});
+    if(cmd=='owner') await sock.sendMessage(jid,{text:'👑 Cosmin - Haita Laix Force'});
   });
 
   sock.ev.on('connection.update', u => {
-    if(u.connection=='open') console.log('✅ MORTEX 9.0 NOUL MENIU ONLINE!');
+    if(u.connection=='open') console.log('✅ MORTEX 9.0 ONLINE CU PAIRING + MENIU NOU!');
     if(u.connection=='close') setTimeout(start,2000);
   });
-
-  // JOS - AICI E TOT MENIUL COMPLET
-  const meniuText = `╭───「 *MORTEX-BOT ULTRA 9.0* 」───
-│ *Sistem:* Activ ✅ | *Ping:* 38ms
-│ *Owner:* Cosmin - Haita Laix Force 🇷🇴
-│ *Prefix:*. | *Versiune:* 9.0
-╰──────────────────────
-
-┌─[ *👑 PROPRIETAR (15)* ]─┐
-│ •.owner •.ping •.alive
-│ •.restart •.update •.setppbot
-│ •.setbio •.broadcast •.bcgrup
-│ •.ban •.unban •.join •.leave
-│ •.eval •.exec
-└──────────────────────
-
-┌─[ *👥 GRUP ADMIN (50)* ]─┐
-│ •.kick •.add •.promote •.demote
-│ •.tagall •.hidetag •.totag
-│ •.linkgrup •.revoke •.setname
-│ •.setdesc •.setwelcome •.setbye
-│ •.welcome on/off •.antilink
-│ •.antibadword •.antispam •.antifake
-│ •.mute •.unmute •.delete •.del
-│ •.warn •.unwarn •.warnings
-│ •.poll •.vote •.open •.close
-│ •.group open/close •.listadmin
-│ •.invite •.setrules •.rules •.info
-└──────────────────────
-
-┌─[ *⬇️ DOWNLOAD (35)* ]─┐
-│ •.play - trimite AUDIO direct
-│ •.play2 •.ytmp3 •.ytmp4 •.yt
-│ •.tiktok •.tt •.fb •.facebook
-│ •.insta •.ig •.igstory •.igstalk
-│ •.twitter •.mediafire •.gdrive
-│ •.apk •.pinterest •.pin
-│ •.spotify •.soundcloud •.lyrics
-└──────────────────────
-
-┌─[ *🤖 AI & TOOLS (30)* ]─┐
-│ •.ai •.gpt •.gemini •.blackbox
-│ •.imagine •.txt2img •.hd
-│ •.translate •.tr •.tts •.toaudio
-│ •.sticker •.s •.toimg •.tovideo
-│ •.weather •.calc •.google •.wiki
-└──────────────────────
-
-┌─[ *😂 FUN & JOCURI (70)* ]─┐
-│ •.meme •.gluma •.citat •.fact
-│ •.ship •.love •.gay •.procent
-│ •.top •.simi •.8ball •.noroc •.zar
-│ •.ruleta •.slot •.pacanea •.xoxo
-│ •.truth •.dare •.pup •.palma
-│ •.caracter •.horoscop •.joc
-└──────────────────────
-
-┌─[ *💀 HAITA LAIX FORCE* ]─┐
-│ Total: 200+ Comenzi
-│ Scrie.play manele si iti da audio
-└──────────────────────`;
 }
-
 start();
