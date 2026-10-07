@@ -1,42 +1,35 @@
-const express = require('express');
-const app = express();
-const { default: makeWASocket, useMultiFileAuthState, delay } = require('@whiskeysockets/baileys');
-const pino = require('pino');
-const fs = require('fs');
+const { default: makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys")
+const P = require("pino")
+const readline = require("readline")
 
-app.use(express.json());
-app.use(express.static('public'));
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+const question = (text) => new Promise((resolve) => rl.question(text, resolve))
 
-app.get('/', (req, res) => {
-  res.send(`
-  <html style="background:black;color:white;text-align:center;padding-top:100px;font-family:Arial">
-  <body>
-    <button onclick="location.href='/qr'" style="padding:15px 30px;border:1px solid white;background:black;color:white;border-radius:10px;margin:10px">QR CODE</button><br>
-    <button onclick="pair()" style="padding:15px 30px;background:white;color:black;border-radius:10px;margin:10px">PAIR CODE</button>
-    <div id="code" style="margin-top:20px;font-size:24px"></div>
-    <script>
-      async function pair(){
-        let num = prompt("Baga numarul cu prefix 40, ex: 40712345678");
-        if(!num) return;
-        let res = await fetch('/pair?number='+num);
-        let data = await res.json();
-        document.getElementById('code').innerText = "CODUL TAU: " + data.code;
-      }
-    </script>
-  </body>
-  </html>`);
-});
+async function pairing() {
+    const { state, saveCreds } = await useMultiFileAuthState("session")
+    const sock = makeWASocket({
+        logger: P({ level: "silent" }),
+        printQRInTerminal: false,
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, P({ level: "silent" }))
+        },
+        browser: ["Ubuntu", "Chrome", "20.0.04"]
+    })
 
-app.get('/pair', async (req, res) => {
-  let num = req.query.number;
-  const { state, saveCreds } = await useMultiFileAuthState('./auth');
-  const sock = makeWASocket({ auth: state, logger: pino({level:'silent'}), printQRInTerminal:false });
-  sock.ev.on('creds.update', saveCreds);
-  if(!state.creds.registered){
-    await delay(2000);
-    let code = await sock.requestPairingCode(num);
-    res.json({code: code});
-  }
-});
+    sock.ev.on("creds.update", saveCreds)
 
-app.listen(3000, () => console.log('Pair running on 3000'));
+    if (!sock.authState.creds.registered) {
+        console.log("\n=== MORTEX-BOT PAIRING ===\n")
+        const phoneNumber = await question("Introdu numarul tau cu prefix (ex: 40712345678): ")
+        const code = await sock.requestPairingCode(phoneNumber.trim())
+        console.log(`\n🔑 Codul tau de pairing este: ${code}\n`)
+        console.log("Du-te in WhatsApp > Setari > Dispozitive conectate > Conecteaza un dispozitiv > Conecteaza cu numar de telefon")
+        console.log("Si introdu codul de mai sus!\n")
+    } else {
+        console.log("Deja conectat! Sterge folderul session daca vrei alt cod.")
+    }
+    rl.close()
+}
+
+pairing()
