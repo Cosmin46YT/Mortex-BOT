@@ -5,7 +5,34 @@ const readline = require('readline');
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const question = (text) => new Promise((resolve) => rl.question(text, resolve));
 
-// JOS - MENIUL MARE
+async function start() {
+  const { state, saveCreds } = await useMultiFileAuthState('./auth');
+  const sock = makeWASocket({
+    auth: state,
+    logger: P({level:'silent'}),
+    printQRInTerminal: false,
+    browser:["Ubuntu","Chrome","20.0.04"]
+  });
+
+  sock.ev.on('creds.update', saveCreds);
+
+  // CODUL DE PAIRING - ASTA ITI TREBUIE PENTRU TELEFON!
+  if (!sock.authState.creds.registered) {
+    console.log('--- CONECTARE WHATSAPP ---');
+    let phoneNumber = process.env.PHONE_NUMBER;
+    if (!phoneNumber) {
+      phoneNumber = await question('📱 Scrie numarul tau cu prefix (ex: 40770811929): ');
+    }
+    phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
+    console.log(`Se genereaza codul pentru +${phoneNumber}...`);
+    await new Promise(r => setTimeout(r, 2000));
+    let code = await sock.requestPairingCode(phoneNumber);
+    console.log(`\n🔑 CODUL TAU DE CONECTARE: ${code}\n`);
+    console.log('1. Deschide WhatsApp pe telefon');
+    console.log('2. Setari > Dispozitive conectate > Conecteaza dispozitiv');
+    console.log('3. Alege "Conecteaza cu numar de telefon" si scrie codul de mai sus!');
+    rl.close();
+  }
 const meniuText = `╭───「 *MORTEX-BOT ULTRA 9.0* 」───
 │ *Sistem:* Activ ✅ | *Ping:* 38ms
 │ *Owner:* Cosmin - Haita Laix Force 🇷🇴
@@ -42,35 +69,6 @@ const meniuText = `╭───「 *MORTEX-BOT ULTRA 9.0* 」───
 ┌─[ *💀 HAITA LAIX FORCE* ]─┐
 │ Total: 200+ Comenzi |.play manele
 └──────────────────────`;
-
-async function start() {
-  const { state, saveCreds } = await useMultiFileAuthState('./auth');
-  const sock = makeWASocket({
-    auth: state,
-    logger: P({level:'silent'}),
-    printQRInTerminal: false,
-    browser:["Ubuntu","Chrome","20.0.04"]
-  });
-
-  sock.ev.on('creds.update', saveCreds);
-
-  // CODUL DE PAIRING - ASTA ITI TREBUIE PENTRU TELEFON!
-  if (!sock.authState.creds.registered) {
-    console.log('--- CONECTARE WHATSAPP ---');
-    let phoneNumber = process.env.PHONE_NUMBER;
-    if (!phoneNumber) {
-      phoneNumber = await question('📱 Scrie numarul tau cu prefix (ex: 40770811929): ');
-    }
-    phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
-    console.log(`Se genereaza codul pentru +${phoneNumber}...`);
-    await new Promise(r => setTimeout(r, 2000));
-    let code = await sock.requestPairingCode(phoneNumber);
-    console.log(`\n🔑 CODUL TAU DE CONECTARE: ${code}\n`);
-    console.log('1. Deschide WhatsApp pe telefon');
-    console.log('2. Setari > Dispozitive conectate > Conecteaza dispozitiv');
-    console.log('3. Alege "Conecteaza cu numar de telefon" si scrie codul de mai sus!');
-    rl.close();
-  }
 
   sock.ev.on('messages.upsert', async ({messages}) => {
     let m = messages[0]; if(!m.message) return;
